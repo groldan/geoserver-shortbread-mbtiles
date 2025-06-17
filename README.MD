@@ -127,6 +127,8 @@ Enter the required details:
 3. Copy the content from [`styles/versatile-style.mbstyle`](styles/versatile-style.mbstyle)
 4. Save the style (ignore any validation errors)
 
+> **Note**: The MBStyle in this repository is based on the [VersaTiles colorful style](https://github.com/versatiles-org/versatiles-style) with modifications to make it compatible with GeoServer and the Shortbread schema.
+
 ![New Style](screenshots/newStyle.png)
 
 ### Step 6: Create Layer Group
@@ -201,6 +203,7 @@ If you encounter errors during preview, you need to update the WMS configuration
 
 - [Shortbread Schema Documentation](https://shortbread-tiles.org/)
 - [Planetiler GitHub Repository](https://github.com/onthegomap/planetiler)
+- [VersaTiles Style (Original Source)](https://github.com/versatiles-org/versatiles-style) - Colorful style for VersaTiles
 - [GeoServer MBTiles Documentation](https://docs.geoserver.org/stable/en/user/community/mbtiles/)
 - [MBStyle Extension Documentation](https://docs.geoserver.org/stable/en/user/styling/mbstyle/)
 - [GeoServer Extension Installation Guide](https://dev.to/ronitjadhav/how-to-install-geoserver-extensions-the-right-way-4e78)
