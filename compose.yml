@@ -11,6 +11,10 @@ services:
       - INSTALL_EXTENSIONS=true
       - STABLE_EXTENSIONS=mbstyle
       - COMMUNITY_EXTENSIONS=mbtiles-store
+      - RUN_UNPRIVILEGED=true
+      - RUN_WITH_USER_UID=1000
+      - RUN_WITH_USER_GID=1000
+      - CHANGE_OWNERSHIP_ON_FOLDERS=/opt /opt/geoserver_data
     volumes:
       - $PWD/config:/opt/geoserver_data
       - $PWD/data:/data
