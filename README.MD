@@ -6,8 +6,9 @@ A comprehensive guide to set up GeoServer with MBTiles vector tiles using the [S
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
-- [GeoServer Setup](#geoserver-setup)
+- [Quick Start](#quick-start)
 - [Creating Shortbread Vector Tiles](#creating-shortbread-vector-tiles)
+- [GeoServer Setup](#geoserver-setup)
 - [Adding MBTiles to GeoServer](#adding-mbtiles-to-geoserver)
 - [Screenshots](#screenshots)
 - [Troubleshooting](#troubleshooting)
@@ -27,29 +28,16 @@ This repository provides a complete workflow for:
 
 Before you begin, ensure you have:
 
-- **GeoServer** (version 2.20+ recommended)
-- **Docker** (for running Planetiler)
-- **Java 11+** (for GeoServer)
-- Basic knowledge of GeoServer administration
+- **Docker and Docker Compose** (for running GeoServer and Planetiler)
+- Basic knowledge of Docker and GeoServer administration
 
-## 🛠️ GeoServer Setup
+## 🚀 Quick Start
 
-To use MBTiles in GeoServer, you'll need to install the following extensions:
-
-### Required Extensions
-
-1. **MBStyles Extension**
-
-   - Download from the [GeoServer release page](https://docs.geoserver.org/stable/en/user/styling/mbstyle/installing.html)
-   - Enables MBStyle format support for styling
-
-2. **MBTiles Store Community Module**
-   - Download `mbtiles-store-plugin` from [GeoServer nightly builds](https://docs.geoserver.org/stable/en/user/community/mbtiles/installing.html)
-   - Enables reading MBTiles as data stores
-
-### Installation Guide
-
-For detailed installation instructions, see: [How to Install GeoServer Extensions the Right Way](https://dev.to/ronitjadhav/how-to-install-geoserver-extensions-the-right-way-4e78)
+1. **Clone this repository**:
+   ```bash
+   git clone <repository-url>
+   cd geoserver-shortbread-mbtiles
+   ```
 
 ## 🗺️ Creating Shortbread Vector Tiles
 
@@ -58,9 +46,6 @@ Use Planetiler with Docker to generate vector tiles for your area of interest:
 ### Example: Generating tiles for Nordrhein-Westfalen (Germany)
 
 ```bash
-# Create data directory
-mkdir data
-
 # Generate MBTiles using Planetiler
 docker run --rm --user=$UID \
   -v $PWD/data:/data \
@@ -79,17 +64,73 @@ You can replace `Nordrhein-Westfalen` with other areas like:
 - `bavaria` (German state)
 - Or any other area supported by Planetiler
 
+## 🛠️ GeoServer Setup
+
+This project uses Docker Compose to run GeoServer with all required extensions pre-installed.
+
+**Start GeoServer** (after generating your MBTiles):
+```bash
+docker compose up -d
+```
+
+**Access GeoServer**:
+- Open your browser and navigate to `http://localhost/geoserver`
+- Default credentials: `admin` / `geoserver`
+
+The Docker setup automatically includes:
+- **MBStyles Extension** - for MBStyle format support
+- **MBTiles Store Community Module** - for reading MBTiles as data stores
+- Optimized Java settings for performance
+- GeoServer configuration directory mounted at `./config`
+- Data directory mounted at `./data`
+
 ## 📦 Adding MBTiles to GeoServer
 
-Follow these steps to add your generated MBTiles to GeoServer:
+### Automated Import (Recommended)
 
-### Step 1: Copy MBTiles File
-
-Copy the generated `.mbtiles` file to your GeoServer data directory:
+The easiest way to set up your MBTiles data in GeoServer is using the automated import script:
 
 ```bash
-cp data/shortbread.mbtiles /usr/share/geoserver/data_dir/data/
+# Run the import script
+docker compose run --rm import_data
 ```
+
+This script will automatically:
+- Create the `osm_shortbread` workspace
+- Create the `osm` datastore pointing to your MBTiles file
+- Publish all available feature types from the MBTiles
+- Create the `versatile-simple` MBStyle using the provided style file
+- Create an `osm-shortbread` layer group with the style applied
+- Configure WMS settings to prevent memory issues during preview
+
+### Re-running the Import Script
+
+If you need to run the import script again (e.g., after updating your MBTiles data), you should first clean up the existing workspace:
+
+```bash
+# Delete the entire workspace and all its contents
+curl -v -u "admin:geoserver" "http://localhost/geoserver/rest/workspaces/osm_shortbread?recurse=true" -X DELETE
+```
+
+This command will remove:
+- The `osm_shortbread` workspace
+- All layers and feature types
+- The `versatile-simple` style
+- The `osm-shortbread` layer group
+
+After cleanup, you can run the import script again:
+
+```bash
+docker compose run --rm import_data
+```
+
+### Manual Import (Alternative)
+
+Follow these steps if you prefer to configure GeoServer manually through the web interface:
+
+### Step 1: Prepare MBTiles File
+
+The generated `.mbtiles` file is already in the correct location in the `/data` directory, which is mounted to the GeoServer container. No additional copying is required.
 
 ### Step 2: Create Workspace and Data Store
 
@@ -108,7 +149,7 @@ cp data/shortbread.mbtiles /usr/share/geoserver/data_dir/data/
 
 Enter the required details:
 
-- **Database field**: Full path to your `.mbtiles` file
+- **Database field**: `/data/shortbread.mbtiles` (path inside the container)
 - **Workspace**: Select your created workspace
 
 ![New MBTiles Datastore](screenshots/newMBTIlesDatastore.png)
@@ -149,10 +190,10 @@ Navigate to "Layer Preview" and preview your layer group using OpenLayers.
 
 If you encounter errors during preview, you need to update the WMS configuration:
 
-1. Navigate to your GeoServer data directory:
+1. Navigate to your local config directory:
 
    ```bash
-   cd /usr/share/geoserver/data_dir
+   cd config
    ```
 
 2. Edit the `wms.xml` file and update the `maxRequestMemory` setting:
@@ -161,7 +202,11 @@ If you encounter errors during preview, you need to update the WMS configuration
    <maxRequestMemory>0</maxRequestMemory>
    ```
 
-3. Restart GeoServer for the changes to take effect
+3. Restart the GeoServer container:
+
+   ```bash
+   docker compose restart geoserver
+   ```
 
 > **Note**: Setting `maxRequestMemory` to `0` removes memory limits for WMS requests, which is necessary for rendering complex vector tile layers. This prevents memory-related errors during preview.
 
@@ -188,9 +233,12 @@ If you encounter errors during preview, you need to update the WMS configuration
 
 #### Preview errors or memory issues
 
-- Update `wms.xml` in your GeoServer data directory (`/usr/share/geoserver/data_dir/wms.xml`)
+> **Note**: WMS settings are automatically configured by the import script. If you used the automated import, memory issues should not occur.
+
+For manual setups:
+- Update `wms.xml` in your local config directory (`config/wms.xml`)
 - Set `<maxRequestMemory>0</maxRequestMemory>` to remove memory limits
-- Restart GeoServer after making the change
+- Restart the GeoServer container: `docker compose restart geoserver`
 - This is essential for rendering complex vector tile layers
 
 ### Performance Tips
