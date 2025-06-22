@@ -39,6 +39,34 @@ Before you begin, ensure you have:
    cd geoserver-shortbread-mbtiles
    ```
 
+2. **Generate MBTiles data**:
+   ```bash
+   # Generate vector tiles for your area of interest
+   docker run --rm --user=$UID \
+     -v $PWD/data:/data \
+     ghcr.io/onthegomap/planetiler shortbread.yml \
+     --download \
+     --area=Nordrhein-Westfalen \
+     --output=/data/shortbread.mbtiles
+   ```
+
+3. **Start GeoServer and import data**:
+   ```bash
+   # Start GeoServer
+   docker compose up -d
+   
+   # Run the automated import script
+   docker compose run --rm import_data
+   ```
+
+4. **View your map**:
+   Open this URL in your browser:
+   
+   http://localhost/geoserver/wms/reflect?layers=osm_shortbread%3Aosm-shortbread&format=application/openlayers
+   
+
+That's it! You now have a fully configured GeoServer with styled vector tiles ready to preview.
+
 ## 🗺️ Creating Shortbread Vector Tiles
 
 Use Planetiler with Docker to generate vector tiles for your area of interest:
