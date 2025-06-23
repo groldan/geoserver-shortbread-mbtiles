@@ -1,0 +1,45 @@
+services:
+  geoserver:
+    # gotta use a .x version to be able of installing community modules
+    image: docker.osgeo.org/geoserver:2.27.x
+    platform: linux/amd64
+    ports:
+      - "80:8080"
+    environment:
+      - EXTRA_JAVA_OPTS=-XX:MaxRAMPercentage=80 -XshowSettings:system
+      #- SKIP_DEMO_DATA=true
+      - INSTALL_EXTENSIONS=true
+      - STABLE_EXTENSIONS=mbstyle
+      - COMMUNITY_EXTENSIONS=mbtiles-store
+      - RUN_UNPRIVILEGED=true
+      - RUN_WITH_USER_UID=1000
+      - RUN_WITH_USER_GID=1000
+      - CHANGE_OWNERSHIP_ON_FOLDERS=/opt /opt/geoserver_data
+    volumes:
+      - $PWD/config:/opt/geoserver_data
+      - $PWD/data:/data
+    healthcheck:
+      test: curl --fail "http://localhost:8080/geoserver/web/wicket/resource/org.geoserver.web.GeoServerBasePage/img/logo.png" || exit 1
+      interval: 1m
+      retries: 3
+      timeout: 20s
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+
+  import_data:
+    image: curlimages/curl:latest
+    depends_on:
+      - geoserver
+    volumes:
+      - $PWD/import_data.sh:/import_data.sh:ro
+      - $PWD/data:/data:ro
+      - $PWD/styles:/styles:ro
+    command: sh /import_data.sh
+    deploy:
+      mode: replicated
+      replicas: 0
