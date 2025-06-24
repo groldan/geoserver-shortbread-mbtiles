@@ -62,7 +62,7 @@ Before you begin, ensure you have:
 4. **View your map**:
    Open this URL in your browser:
    
-   http://localhost/geoserver/wms/reflect?layers=osm_shortbread%3Aosm-shortbread&format=application/openlayers
+   http://localhost/geoserver/wms/reflect?layers=osm_shortbread%3Aosm-shortbread-colourful&format=application/openlayers
    
 
 That's it! You now have a fully configured GeoServer with styled vector tiles ready to preview.
@@ -127,8 +127,10 @@ This script will automatically:
 - Create the `osm_shortbread` workspace
 - Create the `osm` datastore pointing to your MBTiles file
 - Publish all available feature types from the MBTiles
-- Create the `versatile-simple` MBStyle using the provided style file
-- Create an `osm-shortbread` layer group with the style applied
+- Create the `versatile-colourful-en` MBStyle using the provided style file
+- Create the `versatile-eclipse-en` MBStyle using the provided style file
+- Create an `osm-shortbread-colourful` layer group with the style applied
+- Create an `osm-shortbread-eclipse` layer group with the style applied
 - Configure WMS settings to prevent memory issues during preview
 
 ### Re-running the Import Script
@@ -143,8 +145,10 @@ curl -v -u "admin:geoserver" "http://localhost/geoserver/rest/workspaces/osm_sho
 This command will remove:
 - The `osm_shortbread` workspace
 - All layers and feature types
-- The `versatile-simple` style
-- The `osm-shortbread` layer group
+- The `versatile-colourful-en` style
+- The `versatile-eclipse-en` style
+- The `osm-shortbread-colourful` layer group
+- The `osm-shortbread-eclipse` layer group
 
 After cleanup, you can run the import script again:
 

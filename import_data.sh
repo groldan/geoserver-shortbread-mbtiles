@@ -4,7 +4,8 @@
 base_uri="http://geoserver:8080/geoserver/rest"
 workspace="osm_shortbread"
 store="osm"
-style_name="versatile-simple"
+style_name_colourful="versatile-colourful-en"
+style_name_eclipse="versatile-eclipse-en"
 credentials="admin:geoserver"
 
 # Color output for better readability
@@ -161,16 +162,16 @@ for feature_type in $feature_types_raw; do
 done
 
 # Step 5: Create MBStyle
-echo -e "${YELLOW}Step 5: Creating MBStyle '$style_name'...${NC}"
+echo -e "${YELLOW}Step 5: Creating MBStyle '$style_name_colourful'...${NC}"
 
 # First create the style definition in the workspace
 response=$(curl -s -w "%{http_code}" -u "$credentials" -X POST \
     -H "Content-Type: application/xml" \
     "$base_uri/workspaces/$workspace/styles" \
     -d "<style>
-  <name>$style_name</name>
+  <name>$style_name_colourful</name>
   <format>mbstyle</format>
-  <filename>$style_name.mbstyle</filename>
+  <filename>$style_name_colourful.mbstyle</filename>
   <workspace>$workspace</workspace>
 </style>")
 
@@ -189,33 +190,79 @@ else
 fi
 
 # Then upload the style content if style was created successfully
-if [ "$style_created" = "true" ] && [ -f "/styles/versatile-style.mbstyle" ]; then
+if [ "$style_created" = "true" ] && [ -f "/styles/versatile-style-colourful-en.mbstyle" ]; then
     echo -e "${YELLOW}  Uploading style content...${NC}"
     response=$(curl -s -w "%{http_code}" -u "$credentials" -X PUT \
         -H "Content-Type: application/vnd.geoserver.mbstyle+json" \
-        --data-binary "@/styles/versatile-style.mbstyle" \
-        "$base_uri/workspaces/$workspace/styles/$style_name")
+        --data-binary "@/styles/versatile-style-colourful-en.mbstyle" \
+        "$base_uri/workspaces/$workspace/styles/$style_name_colourful")
     
     response_code="${response: -3}"
     if check_response "$response_code" "Style content upload"; then
-        echo -e "${GREEN}  ✓ MBStyle '$style_name' created successfully${NC}"
+        echo -e "${GREEN}  ✓ MBStyle '$style_name_colourful' created successfully${NC}"
     else
         echo -e "${RED}  Failed to upload style content (HTTP $response_code)${NC}"
     fi
-elif [ ! -f "/styles/versatile-style.mbstyle" ]; then
-    echo -e "${RED}  Style file not found: /styles/versatile-style.mbstyle${NC}"
+elif [ ! -f "/styles/versatile-style-colourful-en.mbstyle" ]; then
+    echo -e "${RED}  Style file not found: /styles/versatile-style-colourful-en.mbstyle${NC}"
+fi
+
+# Step 5b: Create second MBStyle (Eclipse EN)
+echo -e "${YELLOW}Step 5b: Creating MBStyle '$style_name_eclipse'...${NC}"
+
+# First create the style definition in the workspace
+response=$(curl -s -w "%{http_code}" -u "$credentials" -X POST \
+    -H "Content-Type: application/xml" \
+    "$base_uri/workspaces/$workspace/styles" \
+    -d "<style>
+  <name>$style_name_eclipse</name>
+  <format>mbstyle</format>
+  <filename>$style_name_eclipse.mbstyle</filename>
+  <workspace>$workspace</workspace>
+</style>")
+
+response_code="${response: -3}"
+if ! check_response "$response_code" "Eclipse style definition creation"; then
+    if [ "$response_code" = "409" ]; then
+        echo -e "${YELLOW}  Eclipse style already exists, updating...${NC}"
+    else
+        echo -e "${RED}  Failed to create eclipse style definition (HTTP $response_code)${NC}"
+        echo -e "${YELLOW}  Continuing without eclipse style creation...${NC}"
+        # Don't exit, just skip style creation
+        eclipse_style_created=false
+    fi
+else
+    eclipse_style_created=true
+fi
+
+# Then upload the style content if style was created successfully
+if [ "$eclipse_style_created" = "true" ] && [ -f "/styles/versatile-style-eclipse-en.mbstyle" ]; then
+    echo -e "${YELLOW}  Uploading eclipse style content...${NC}"
+    response=$(curl -s -w "%{http_code}" -u "$credentials" -X PUT \
+        -H "Content-Type: application/vnd.geoserver.mbstyle+json" \
+        --data-binary "@/styles/versatile-style-eclipse-en.mbstyle" \
+        "$base_uri/workspaces/$workspace/styles/$style_name_eclipse")
+    
+    response_code="${response: -3}"
+    if check_response "$response_code" "Eclipse style content upload"; then
+        echo -e "${GREEN}  ✓ MBStyle '$style_name_eclipse' created successfully${NC}"
+    else
+        echo -e "${RED}  Failed to upload eclipse style content (HTTP $response_code)${NC}"
+    fi
+elif [ ! -f "/styles/versatile-style-eclipse-en.mbstyle" ]; then
+    echo -e "${RED}  Eclipse style file not found: /styles/versatile-style-eclipse-en.mbstyle${NC}"
 fi
 
 # Step 6: Create Layer Group with Style Group
-echo -e "${YELLOW}Step 6: Creating layer group 'osm-shortbread'...${NC}"
+echo -e "${YELLOW}Step 6: Creating layer group 'osm-shortbread-colourful'...${NC}"
 
 response=$(curl -s -w "%{http_code}" -u "$credentials" -X POST \
     -H "Content-Type: application/xml" \
     "$base_uri/workspaces/$workspace/layergroups" \
     -d "<layerGroup>
-<name>osm-shortbread</name>
+<name>osm-shortbread-colourful</name>
 <mode>SINGLE</mode>
-<title>osm-shortbread</title>
+<title>osm-shortbread-colourful</title>
 <workspace>
   <name>$workspace</name>
 </workspace>
@@ -224,7 +271,7 @@ response=$(curl -s -w "%{http_code}" -u "$credentials" -X POST \
 </publishables>
 <styles>
  <style>
-  <name>$workspace:$style_name</name>
+  <name>$workspace:$style_name_colourful</name>
  </style>
 </styles>
 </layerGroup>")
@@ -238,7 +285,42 @@ if ! check_response "$response_code" "Layer group creation"; then
         echo -e "${YELLOW}  You can create it manually in GeoServer admin interface${NC}"
     fi
 else
-    echo -e "${GREEN}  ✓ Layer group 'osm-shortbread' created successfully${NC}"
+    echo -e "${GREEN}  ✓ Layer group 'osm-shortbread-colourful' created successfully${NC}"
+fi
+
+# Step 6b: Create second Layer Group with Eclipse Style
+echo -e "${YELLOW}Step 6b: Creating layer group 'osm-shortbread-eclipse'...${NC}"
+
+response=$(curl -s -w "%{http_code}" -u "$credentials" -X POST \
+    -H "Content-Type: application/xml" \
+    "$base_uri/workspaces/$workspace/layergroups" \
+    -d "<layerGroup>
+<name>osm-shortbread-eclipse</name>
+<mode>SINGLE</mode>
+<title>osm-shortbread-eclipse</title>
+<workspace>
+  <name>$workspace</name>
+</workspace>
+<publishables>
+<published/>
+</publishables>
+<styles>
+ <style>
+  <name>$workspace:$style_name_eclipse</name>
+ </style>
+</styles>
+</layerGroup>")
+
+response_code="${response: -3}"
+if ! check_response "$response_code" "Eclipse layer group creation"; then
+    if [ "$response_code" = "409" ]; then
+        echo -e "${YELLOW}  Eclipse layer group already exists, skipping...${NC}"
+    else
+        echo -e "${RED}  Failed to create eclipse layer group (HTTP $response_code)${NC}"
+        echo -e "${YELLOW}  You can create it manually in GeoServer admin interface${NC}"
+    fi
+else
+    echo -e "${GREEN}  ✓ Layer group 'osm-shortbread-eclipse' created successfully${NC}"
 fi
 
 # Step 7: Configure WMS settings for memory optimization
